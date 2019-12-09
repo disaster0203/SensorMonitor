@@ -1,0 +1,8 @@
+default_color = "#e5e5e5"
+hover_color = "#b1b3b6"
+hover_selected_color = "#6d2737"
+selected_color = "#4f1421"
+disabled_color = "#cccccc"
+foreground_color = "#1a1a1a"
+default_signal_color = "#bb0a30"
+disabled_signal_color = "#b3b3b3"
