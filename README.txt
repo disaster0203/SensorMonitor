@@ -1,0 +1,1 @@
+Project to monitor sensor data on a raspberry pi.
