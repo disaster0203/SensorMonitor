@@ -25,7 +25,7 @@ class MainWindow:
         self.window.grid_columnconfigure(0, weight=1)
 
         self.is_running = False
-        self.time_wrkr = TimeWorker(self.on_time_worker_update)
+        self.time_wrkr = TimeWorker(self.on_time_worker_update, self.on_time_worker_finished)
 
         self._setup_layout()
 
@@ -173,6 +173,9 @@ class MainWindow:
 
     def on_time_worker_update(self, recording_time):
         self.recording_time.configure(text=time.strftime("%H:%M:%S", time.gmtime(recording_time)))
+
+    def on_time_worker_finished(self):
+        self.toggle_start_stop(None)
 
 
 ############################################################################
