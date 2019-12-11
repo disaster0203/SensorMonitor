@@ -25,6 +25,14 @@ class ColorManager:
                 return light.default_color
         return "#000000"
 
+    def get_secondary_color(self):
+        if self.theme != "":
+            if self.theme == "dark":
+                return dark.secondary_color
+            elif self.theme == "light":
+                return light.secondary_color
+        return "#000000"
+
     def get_hover_color(self):
         if self.theme != "":
             if self.theme == "dark":
