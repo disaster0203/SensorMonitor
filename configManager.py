@@ -46,7 +46,7 @@ class ConfigManager:
             return jsonpickle.decode(content)
 
     def write_config_data(self):
-        if not os.path.exists(self.path_to_config) or not os.path.isfile(self.path_to_config):
+        if os.path.exists(self.path_to_config) and os.path.isfile(self.path_to_config):
             config_file = open(self.path_to_config, "w")
             config_file.write(jsonpickle.encode(self.config_data))
             config_file.close()
