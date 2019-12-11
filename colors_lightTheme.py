@@ -1,4 +1,5 @@
 default_color = "#e5e5e5"
+secondary_color = "#e6e6e6"
 hover_color = "#b1b3b6"
 hover_selected_color = "#6d2737"
 selected_color = "#4f1421"
