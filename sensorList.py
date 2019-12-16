@@ -4,13 +4,15 @@ import sensorItem as item
 
 
 class SensorList(Frame):
-    def __init__(self, parent, sensors, disable_callback, select_callback, list_width, *args, **kwargs):
+    def __init__(self, parent, sensors, disable_callback, select_callback, value_callback, list_width, *args, **kwargs):
         Frame.__init__(self, parent)
         self.currently_selected_index = -1
         self.colorMng = col.ColorManager()
         self.disable_callback = disable_callback
         self.select_callback = select_callback
+        self.value_callback = value_callback
         self.list_width = list_width
+        self.is_measuring = False
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -29,7 +31,7 @@ class SensorList(Frame):
         self.item_views = []
         for index, sensor in enumerate(sensors):
             is_last = index == len(sensors) - 1
-            sensor_item = item.SensorItem(self.item_container, sensor, self._on_disable_sensor, self._on_select_sensor,
+            sensor_item = item.SensorItem(self.item_container, sensor, self._on_disable_sensor, self._on_select_sensor, self._on_value_update,
                                           index, self.list_width, is_last)
             sensor_item.grid(row=index, sticky="w")
             self.item_views.append(sensor_item)
@@ -44,6 +46,9 @@ class SensorList(Frame):
             if item.is_active():
                 return i
         return -1  # Nothing is selectable
+
+    def get_sensors(self):
+        return self.item_views
 
     def get_selected_index(self):
         return self.currently_selected_index
@@ -62,6 +67,21 @@ class SensorList(Frame):
             self.item_views[index].select()
             self.currently_selected_index = index
 
+    def start_measurement(self):
+        for sensor in self.item_views:
+            if sensor.is_active():
+                sensor.start_value_collection()
+        self.is_measuring = True
+
+    def stop_measurement(self):
+        for sensor in self.item_views:
+            if sensor.is_active():
+                sensor.stop_value_collection()
+        self.is_measuring = False
+
+    def measuring(self):
+        return self.is_measuring
+
     def _on_disable_sensor(self, index, name):
         if self.item_views[index].is_active():
             self.item_views[index].disable()
@@ -71,7 +91,11 @@ class SensorList(Frame):
 
     def _on_select_sensor(self, index, name):
         self.select(index)
-        self.select_callback(self.currently_selected_index, name, self.item_views[self.currently_selected_index].is_selected())
+        self.select_callback(self.currently_selected_index, name)
+
+    def _on_value_update(self, index, name, values):
+        if index == self.currently_selected_index:
+            self.value_callback(index, name, values)
 
     def _bound_to_mousewheel(self, event):
         self.scroll_container.bind_all("<MouseWheel>", self._on_mousewheel)
