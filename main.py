@@ -2,6 +2,7 @@ from datetime import datetime
 import time
 import tkinter as tk
 from tkinter import filedialog
+import queue
 import configManager as CM
 import colorManager as Col
 import sensorList as List
@@ -18,6 +19,7 @@ colorMng.set_theme("dark")
 class MainWindow:
     def __init__(self, window):
         self.window = window
+
         self.window.resizable(False, False)
         self.window.wm_title("Raspberry Sensor Monitor")
         self.window.geometry(str(configMng.get_window_settings().width) + "x" + str(configMng.get_window_settings().height))
@@ -25,7 +27,8 @@ class MainWindow:
         self.window.grid_columnconfigure(0, weight=1)
 
         self.is_running = False
-        self.time_wrkr = TimeWorker(self.on_time_worker_update, self.on_time_worker_finished)
+        self.timer_queue = None
+        self.time_wrkr = None
 
         self._setup_layout()
 
@@ -42,7 +45,7 @@ class MainWindow:
         self.list_area.grid_rowconfigure(0, weight=1)
         self.list_area.grid_columnconfigure(0, weight=0)
         self.list_area.grid(column=0, row=0, sticky="nsw")
-        self.sensor_list = List.SensorList(self.list_area, configMng.get_sensors(), self.on_disable, self.on_select,
+        self.sensor_list = List.SensorList(self.list_area, configMng.get_sensors(), self.on_disable, self.on_select, self.on_value,
                                            configMng.get_window_settings().width * 0.25)
         self.sensor_list.grid(column=0, row=0, sticky="nsw")
 
@@ -84,8 +87,7 @@ class MainWindow:
         self.graph_area.grid_rowconfigure(0, weight=1)
         self.graph_area.grid_columnconfigure(0, weight=1)
         self.graph_area.grid(column=1, row=1, sticky="nswe")
-        points = [0, 1, 0, -1, -2, 0, 1, 2]
-        self.graph = Graph.GraphView(self.graph_area, points, 20, configMng.get_sensors()[0].color, 5,
+        self.graph = Graph.GraphView(self.graph_area, [], 20, configMng.get_sensors()[0].color, 5,
                                      configMng.get_window_settings().width * 0.75 - 20,  # minus padding
                                      configMng.get_window_settings().height / 7 * 4 - 20)  # minus padding
         self.graph.grid(column=0, row=0, sticky="nswe", padx=10, pady=10)
@@ -131,9 +133,9 @@ class MainWindow:
         self.avg_value_label = tk.Label(self.value_area, font="Helvetica 11", text="Avg.:",
                                         fg=colorMng.get_foreground_color(), bg=colorMng.get_default_color())
         self.avg_value_label.grid(column=0, row=4, sticky="wn", padx=10)
-        self.avg_value_label = tk.Label(self.value_area, font="Helvetica 11", text="27.8 °C",
+        self.avg_value = tk.Label(self.value_area, font="Helvetica 11", text="27.8 °C",
                                         fg=colorMng.get_foreground_color(), bg=colorMng.get_default_color())
-        self.avg_value_label.grid(column=0, row=4, sticky="en", padx=10)
+        self.avg_value.grid(column=0, row=4, sticky="en", padx=10)
 
         # Time
         self.recording_time_label = tk.Label(self.value_area, font="Helvetica 11", text="Aufnahmezeit",
@@ -146,8 +148,28 @@ class MainWindow:
     def on_disable(self, index, name, state):
         configMng.change_sensor_state(state, index)
 
-    def on_select(self, index, name, state):
+    def on_select(self, index, name):
         self.sensor_name.configure(text=name)
+        # Check if index is in range of sensor list
+        sensors = self.sensor_list.get_sensors()
+        if len(sensors) > 0 and index < len(sensors):
+            # Check if sensor has values
+            values = sensors[index].get_values()
+            if values is not None:
+                # Display values in GUI
+                self.current_value.configure(text=round(values.current, 3))
+                self.max_value.configure(text=round(values.max, 3))
+                self.min_value.configure(text=round(values.min, 3))
+                self.avg_value.configure(text=round(values.avg, 3))
+                self.graph.replace(values.last_values, sensors[index].get_data().color)
+
+    def on_value(self, index, name, values):
+        self.sensor_name.configure(text=name)
+        self.current_value.configure(text=round(values.current, 3))
+        self.max_value.configure(text=round(values.max, 3))
+        self.min_value.configure(text=round(values.min, 3))
+        self.avg_value.configure(text=round(values.avg, 3))
+        self.graph.add_value(values.current)
 
     def open_folder_dialog(self, event):
         self.path_input.delete(0, tk.END)
@@ -165,14 +187,30 @@ class MainWindow:
         if not self.is_running:
             self.is_running = True
             self.play_icon = colorMng.get_stop_icon(colorMng.get_default_signal_color(), self.play_icon, 20, 20)
+
+            self.timer_queue = queue.Queue()
+            self.time_wrkr = TimeWorker(self.timer_queue)
             self.time_wrkr.start()
+            self.window.after(100, self.process_time_queue)
+            self.sensor_list.start_measurement()
         else:
             self.is_running = False
             self.play_icon = colorMng.get_play_icon(colorMng.get_default_signal_color(), self.play_icon, 20, 20)
             self.time_wrkr.stop()
+            self.sensor_list.stop_measurement()
 
-    def on_time_worker_update(self, recording_time):
-        self.recording_time.configure(text=time.strftime("%H:%M:%S", time.gmtime(recording_time)))
+    def process_time_queue(self):
+        try:
+            seconds = self.timer_queue.get(0)
+            if seconds is None:
+                self.on_time_worker_finished()
+                return
+            self.recording_time.configure(text=time.strftime("%H:%M:%S", time.gmtime(seconds)))
+        except queue.Empty:
+            self.window.after(100, self.process_time_queue)
+            return
+        self.timer_queue.queue.clear()
+        self.window.after(100, self.process_time_queue)
 
     def on_time_worker_finished(self):
         self.toggle_start_stop(None)
@@ -181,5 +219,6 @@ class MainWindow:
 ############################################################################
 # Create window
 root = tk.Tk()
+#root.protocol("WM_DELETE_WINDOW", self.quit)
 main_window = MainWindow(root)
 root.mainloop()
