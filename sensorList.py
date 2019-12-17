@@ -1,13 +1,20 @@
 from tkinter import *
-import colorManager as col
-import sensorItem as item
+import queue
+import SensorMonitor.configManager as conf
+import SensorMonitor.colorManager as col
+import SensorMonitor.sensorItem as item
+import SensorMonitor.fileWorker as fileWorker
+from SensorMonitor.valueTimestampTuple import ValueTimestampTuple
 
 
 class SensorList(Frame):
-    def __init__(self, parent, sensors, disable_callback, select_callback, value_callback, list_width, *args, **kwargs):
+    def __init__(self, parent, disable_callback, select_callback, value_callback, list_width, *args, **kwargs):
         Frame.__init__(self, parent)
         self.currently_selected_index = -1
-        self.colorMng = col.ColorManager()
+        self.config_mng = conf.ConfigManager()
+        self.color_mng = col.ColorManager()
+        self.file_worker = None
+        self.item_queues = None
         self.disable_callback = disable_callback
         self.select_callback = select_callback
         self.value_callback = value_callback
@@ -16,12 +23,12 @@ class SensorList(Frame):
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        self.configure(bg=self.colorMng.get_default_color(), width=self.list_width)
+        self.configure(bg=self.color_mng.get_default_color(), width=self.list_width)
 
         self.scrollbar = Scrollbar(self, orient=VERTICAL)
         self.scrollbar.grid(column=0, row=0, sticky="nse")
 
-        self.scroll_container = Canvas(self, relief="ridge", highlightthickness=0, bg=self.colorMng.get_default_color())
+        self.scroll_container = Canvas(self, relief="ridge", highlightthickness=0, bg=self.color_mng.get_default_color())
         self.scroll_container.grid(column=0, row=0, sticky="nsw")
 
         self.item_container = Frame(self.scroll_container)
@@ -29,10 +36,11 @@ class SensorList(Frame):
         self.item_container.bind('<Leave>', self._unbound_to_mousewheel)
 
         self.item_views = []
-        for index, sensor in enumerate(sensors):
-            is_last = index == len(sensors) - 1
-            sensor_item = item.SensorItem(self.item_container, sensor, self._on_disable_sensor, self._on_select_sensor, self._on_value_update,
-                                          index, self.list_width, is_last)
+        for index, sensor in enumerate(self.config_mng.get_sensors()):
+            is_last = index == len(self.config_mng.get_sensors()) - 1
+            sensor_item = item.SensorItem(self.item_container, self.config_mng.get_sensors()[index],
+                                          self.config_mng.get_window_settings().value_history_size,
+                                          self._on_disable_sensor, self._on_select_sensor, self._on_value_update, index, self.list_width, is_last)
             sensor_item.grid(row=index, sticky="w")
             self.item_views.append(sensor_item)
         self.scroll_container.create_window(0, 0, anchor="w", window=self.item_container)
@@ -42,8 +50,8 @@ class SensorList(Frame):
         self.scroll_container.configure(scrollregion=self.scroll_container.bbox(ALL), yscrollcommand=self.scrollbar.set)
 
     def get_first_selectable(self):
-        for i, item in enumerate(self.item_views):
-            if item.is_active():
+        for i, sensor in enumerate(self.item_views):
+            if sensor.is_active():
                 return i
         return -1  # Nothing is selectable
 
@@ -68,19 +76,40 @@ class SensorList(Frame):
             self.currently_selected_index = index
 
     def start_measurement(self):
+        # First setup queues for each active sensor to be able to communicate new values to write thread
+        self.item_queues = {}
+        for sensor in self.item_views:
+            if sensor.is_active():
+                self.item_queues[sensor.get_data().name] = queue.Queue()
+
+        # Initialize and start write thread
+        self.file_worker = fileWorker.FileWorker(self.config_mng.get_output_settings().defaultPath +
+                                                 self.config_mng.get_output_settings().defaultFilename + "_",
+                                                 self.item_queues,
+                                                 self.config_mng.get_output_settings().defaultFileExtension,
+                                                 self.config_mng.get_output_settings().separator)
+        self.file_worker.start()
+
+        # Start worker threads on each active sensor that deliver values
         for sensor in self.item_views:
             if sensor.is_active():
                 sensor.start_value_collection()
+
         self.is_measuring = True
 
     def stop_measurement(self):
         for sensor in self.item_views:
             if sensor.is_active():
                 sensor.stop_value_collection()
+        self.file_worker.stop()
         self.is_measuring = False
 
     def measuring(self):
         return self.is_measuring
+
+    def clear(self):
+        for sensor in self.item_views:
+            sensor.clear_values()
 
     def _on_disable_sensor(self, index, name):
         if self.item_views[index].is_active():
@@ -94,6 +123,8 @@ class SensorList(Frame):
         self.select_callback(self.currently_selected_index, name)
 
     def _on_value_update(self, index, name, values):
+        self.item_queues[name].put(ValueTimestampTuple(values.current, values.timestamp))
+
         if index == self.currently_selected_index:
             self.value_callback(index, name, values)
 

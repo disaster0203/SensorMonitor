@@ -1,6 +1,6 @@
 import tkinter as tk
-import colors_darkTheme as dark
-import colors_lightTheme as light
+import SensorMonitor.colors_darkTheme as dark
+import SensorMonitor.colors_lightTheme as light
 from PIL import ImageTk, Image
 
 

@@ -1,7 +1,7 @@
 from tkinter import *
 import queue
-import colorManager as col
-from demoValueWorker import DemoValueWorker, ValueTimestampTuple
+import SensorMonitor.colorManager as col
+from SensorMonitor.demoValueWorker import DemoValueWorker, ValueTimestampTuple
 
 
 class SensorValues:
@@ -29,10 +29,19 @@ class SensorValues:
         if len(self.last_values) > self._history_size:
             self.last_values = self.last_values[len(self.last_values) - self._history_size:]
 
+    def clear_values(self):
+        self.last_values = []
+        self.current = 0
+        self.max = -sys.maxsize - 1
+        self.min = sys.maxsize
+        self.avg = 0
+        self.sum = 0
+        self.value_count = 0
+        self.timestamp = ""
 
 class SensorItem(Frame):
-    def __init__(self, parent, sensor_data, disable_callback, select_callback, value_update_callback, index, item_width, is_last=False, *args,
-                 **kwargs):
+    def __init__(self, parent, sensor_data, history_size, disable_callback, select_callback, value_update_callback, index, item_width,
+                 is_last=False, *args, **kwargs):
         Frame.__init__(self, parent)
         self.grid_rowconfigure(0, weight=1)
 
@@ -46,7 +55,7 @@ class SensorItem(Frame):
         self.height = self.winfo_reqheight()
         self.item_width = item_width
         self.is_last = is_last
-        self.sensor_values = SensorValues()
+        self.sensor_values = SensorValues(history_size)
         self.worker_queue = None
         self.worker = None
         self.setup_layout()
@@ -111,6 +120,9 @@ class SensorItem(Frame):
 
     def get_values(self):
         return self.sensor_values
+
+    def clear_values(self):
+        self.sensor_values.clear_values()
 
     def is_active(self):
         return self.data.active
