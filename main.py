@@ -3,15 +3,18 @@ import time
 import tkinter as tk
 from tkinter import filedialog
 import queue
-import configManager as CM
-import colorManager as Col
-import sensorList as List
-import graphView as Graph
-from timeWorker import TimeWorker
+import os
+import platform
+import SensorMonitor.configManager as Conf
+import SensorMonitor.colorManager as Col
+import SensorMonitor.sensorList as List
+import SensorMonitor.graphView as Graph
+from SensorMonitor.timeWorker import TimeWorker
 
 ############################################################################
 # Define global variables
-configMng = CM.ConfigManager("./config.json")
+configMng = Conf.ConfigManager()
+configMng.load_config("./config.json")
 colorMng = Col.ColorManager()
 colorMng.set_theme("dark")
 
@@ -45,7 +48,7 @@ class MainWindow:
         self.list_area.grid_rowconfigure(0, weight=1)
         self.list_area.grid_columnconfigure(0, weight=0)
         self.list_area.grid(column=0, row=0, sticky="nsw")
-        self.sensor_list = List.SensorList(self.list_area, configMng.get_sensors(), self.on_disable, self.on_select, self.on_value,
+        self.sensor_list = List.SensorList(self.list_area, self.on_disable, self.on_select, self.on_value,
                                            configMng.get_window_settings().width * 0.25)
         self.sensor_list.grid(column=0, row=0, sticky="nsw")
 
@@ -67,7 +70,7 @@ class MainWindow:
         self.path_input = tk.Entry(self.control_area, bd=0, fg=colorMng.get_foreground_color(),
                                    bg=colorMng.get_secondary_color(), font="Helvetica 14")
         self.path_input.grid(column=0, row=0, sticky="we", padx=10, pady=10)
-        self.path_input.insert(0, configMng.get_output_settings().defaultPath)
+        self.path_input.insert(0, self._create_platform_specific_path(configMng.get_output_settings().defaultPath))
         # Open folder button
         self.folder_icon = tk.Canvas(self.control_area, width=20, height=20, bg=colorMng.get_default_color(),
                                      highlightthickness=0, relief="ridge")
@@ -87,7 +90,7 @@ class MainWindow:
         self.graph_area.grid_rowconfigure(0, weight=1)
         self.graph_area.grid_columnconfigure(0, weight=1)
         self.graph_area.grid(column=1, row=1, sticky="nswe")
-        self.graph = Graph.GraphView(self.graph_area, [], 20, configMng.get_sensors()[0].color, 5,
+        self.graph = Graph.GraphView(self.graph_area, [], configMng.get_window_settings().value_history_size, configMng.get_sensors()[0].color, 5,
                                      configMng.get_window_settings().width * 0.75 - 20,  # minus padding
                                      configMng.get_window_settings().height / 7 * 4 - 20)  # minus padding
         self.graph.grid(column=0, row=0, sticky="nswe", padx=10, pady=10)
@@ -173,20 +176,17 @@ class MainWindow:
 
     def open_folder_dialog(self, event):
         self.path_input.delete(0, tk.END)
-        complete_path = filedialog.askdirectory()
+        complete_path = self._create_platform_specific_path(filedialog.askdirectory())
         self.path_input.insert(0, complete_path)
-        return complete_path
-
-    @staticmethod
-    def construct_filename(folder_path):
-        cur_time = datetime.now().strftime("%Y-%m-%d_%H:%M")
-        return folder_path + "/" + configMng.get_output_settings().defaultFilename + cur_time + configMng.get_output_settings().defaultFileExtension
+        configMng.change_output_path(complete_path)
 
     def toggle_start_stop(self, event):
         self.play_icon.delete("all")
         if not self.is_running:
             self.is_running = True
             self.play_icon = colorMng.get_stop_icon(colorMng.get_default_signal_color(), self.play_icon, 20, 20)
+            self.graph.clear()
+            self.sensor_list.clear()
 
             self.timer_queue = queue.Queue()
             self.time_wrkr = TimeWorker(self.timer_queue)
@@ -214,6 +214,19 @@ class MainWindow:
 
     def on_time_worker_finished(self):
         self.toggle_start_stop(None)
+
+    @staticmethod
+    def _create_platform_specific_path(input_path):
+        # Add the right platform specific folder separators to the path.
+        # Linux and Apple (Darwin) new / while Windows needs \\
+        current_platform = platform.system()
+        if current_platform == "Linux" or current_platform == "Darwin":
+            input_path = input_path.replace("\\", "/")
+        elif "Windows":
+            input_path = input_path.replace("/", "\\")
+
+        # Add / or \\ at the end of the path if it is not already there
+        return os.path.join(input_path, "")
 
 
 ############################################################################

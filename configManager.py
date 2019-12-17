@@ -13,16 +13,18 @@ class Sensor:
 
 
 class WindowSettings:
-    def __init__(self, width, height):
+    def __init__(self, width, height, value_history_size):
         self.width = width
         self.height = height
+        self.value_history_size = value_history_size
 
 
 class OutputSettings:
-    def __init__(self, default_path, default_filename, default_file_extension):
+    def __init__(self, default_path, default_filename, default_file_extension, separator):
         self.defaultPath = default_path
         self.defaultFilename = default_filename
         self.defaultFileExtension = default_file_extension
+        self.separator = separator
 
 
 class ConfigData:
@@ -33,20 +35,26 @@ class ConfigData:
 
 
 class ConfigManager:
-    def __init__(self, path_to_config):
-        self.path_to_config = path_to_config
-        self.config_data = self.load_config(self.path_to_config)
+    __instance = None
+    path_to_config = ""
+    config_data = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls.__instance:
+            cls.__instance = super(ConfigManager, cls).__new__(cls, *args, **kwargs)
+        return cls.__instance
 
     def load_config(self, path):
+        self.path_to_config = path
         if not os.path.exists(path) or not os.path.isfile(path):
-            return self.__create_config_from_defaults__()
+            self.config_data = self.__create_config_from_defaults__()
         else:
             config_file = open(self.path_to_config, "r")
             content = config_file.read()
-            return jsonpickle.decode(content)
+            self.config_data = jsonpickle.decode(content)
 
     def write_config_data(self):
-        if os.path.exists(self.path_to_config) and os.path.isfile(self.path_to_config):
+        if self.config_data is not None and os.path.exists(self.path_to_config) and os.path.isfile(self.path_to_config):
             config_file = open(self.path_to_config, "w")
             config_file.write(jsonpickle.encode(self.config_data))
             config_file.close()
@@ -83,9 +91,17 @@ class ConfigManager:
         else:
             return None
 
+    def change_output_path(self, path):
+        if self.config_data is not None:
+            self.config_data.output_settings.defaultPath = path
+            self.write_config_data()
+            return True
+        else:
+            return False
+
     def __create_config_from_defaults__(self):
-        window = WindowSettings(800, 600)
-        output = OutputSettings("./", "Measurement_", ".csv")
+        window = WindowSettings(800, 600, 100)
+        output = OutputSettings("./", "Measurement_", "csv", ",")
         sensors = [Sensor("TestSensor", 1, 0, True, "#FF0000", "°C")]
         new_config = ConfigData(sensors, window, output)
 

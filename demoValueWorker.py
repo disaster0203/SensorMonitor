@@ -1,15 +1,8 @@
 import threading
 import time
 import random
-import queue
 from datetime import datetime
-
-
-class ValueTimestampTuple:
-    def __init__(self, value, timestamp):
-        self.value = value
-        self.timestamp = timestamp
-
+from SensorMonitor.valueTimestampTuple import ValueTimestampTuple
 
 class DemoValueWorker:
     def __init__(self, gpio, queue, update_interval=0.5):

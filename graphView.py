@@ -1,5 +1,5 @@
 from tkinter import *
-import colorManager as col
+import SensorMonitor.colorManager as col
 
 
 class GraphView(Canvas):
@@ -37,6 +37,11 @@ class GraphView(Canvas):
     def replace(self, new_values, new_color):
         self.color = new_color
         self.values = new_values
+        self.check_values_list()
+        self.draw()
+
+    def clear(self):
+        self.values = []
         self.check_values_list()
         self.draw()
 
