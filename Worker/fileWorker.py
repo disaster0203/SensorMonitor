@@ -1,26 +1,26 @@
 import threading
 import time
 import datetime
-import csv
-
-
-class CSVFile:
-    def __init__(self, path, separator=","):
-        self.path = path
-        self.file = open(self.path, "w", newline='')
-        self.writer = csv.writer(self.file, delimiter=separator)
-        # Write headline
-        self.writer.writerow(["Value", "Time"])
-
-    def write(self, value):
-        self.writer.writerow([value.value, value.timestamp])
-
-    def finish(self):
-        self.file.close()
+from queue import Queue
+from typing import Dict
+from SensorMonitor.DataContainer.csvFile import CSVFile
+from SensorMonitor.DataContainer.valueTimestampTuple import ValueTimestampTuple
 
 
 class FileWorker:
-    def __init__(self, path, queues, extension, separator=","):
+    """Worker class that contains a thread that can be used to write csv files."""
+
+    def __init__(self, path: str, queues: Dict[str, Queue], extension: str, separator: str = ","):
+        """Initializes the FileWorker
+
+        :param path: str = The path where all files should be created.
+        :param queues: Dict[str, Queue] = a dictionary containing each active sensor as key and
+                                         and a queue as value
+        :param extension: str = the file types to create (separated by comma). At the moment only
+                                'csv' is supported.
+        :param separator: str = the column separator of the csv files.
+        """
+
         self.output_path = path
         self._queues = queues
         self._files = {}
@@ -29,7 +29,17 @@ class FileWorker:
         self._run = False
         self._writer_thread = None
 
+    def is_running(self) -> bool:
+        """Returns whether the thread is currently running or not.
+
+        :return True if the thread is running, False otherwise.
+        """
+
+        return self._run
+
     def start(self):
+        """Starts the thread. If it is already running nothing happens."""
+
         # is already running
         if self._run or len(self._extensions) == 0:
             return
@@ -50,6 +60,8 @@ class FileWorker:
         self._writer_thread.start()
 
     def stop(self):
+        """Stops the thread. If it is already stopped nothing happens."""
+
         # is already paused
         if not self._run:
             return
@@ -58,6 +70,10 @@ class FileWorker:
         self._writer_thread.join()
 
     def _thread_function(self):
+        """The function that actually runs inside the thread. It iterates through the dictionary and listens on each queue.
+        If new values arrived they are written to file. If the measurement was stopped but not all queues are empty, the
+        remaining values are written to file before the thread stops."""
+
         while self._run:
             for n, q in self._queues.items():
                 if not q.empty():
@@ -79,7 +95,13 @@ class FileWorker:
         for file in self._files:
             self._files[file]["csv"].finish()
 
-    def _write_csv(self, sensor_name, value_to_write):
+    def _write_csv(self, sensor_name: str, value_to_write: ValueTimestampTuple):
+        """ Writes a new row to a csv file.
+
+        :param sensor_name: str = the name of the sensor hat got new values
+        :param value_to_write: ValueTimestampTuple = the new value timestamp tuple to write to file.
+        """
+
         self._files[sensor_name]["csv"].write(value_to_write)
 
     # def _write_xlsx(self, sensor_name, value_to_write):
