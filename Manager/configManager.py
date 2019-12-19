@@ -5,6 +5,7 @@ from SensorMonitor.DataContainer.sensor import Sensor
 from SensorMonitor.DataContainer.windowSettings import WindowSettings
 from SensorMonitor.DataContainer.outputSettings import OutputSettings
 from SensorMonitor.DataContainer.configData import ConfigData
+from SensorMonitor.DataContainer.gpio import GPIO, GPIOMode
 
 
 class ConfigManager:
@@ -158,9 +159,9 @@ class ConfigManager:
 
         :return a ConfigData object containing the default config values.
         """
-        window = WindowSettings(800, 600, 100, "Dark")
+        window = WindowSettings(800, 600, 100, "Dark", "Live")
         output = OutputSettings("../", "Measurement_", "csv", ",")
-        sensors = [Sensor("TestSensor", 1, 0, True, "#FF0000", "C")]
+        sensors = [Sensor("TestSensor", [GPIO(1, GPIOMode.IN)], 0, True, "#FF0000", "C")]
         new_config = ConfigData(sensors, window, output)
 
         config_file = open(self.path_to_config, "x")
