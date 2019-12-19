@@ -74,7 +74,8 @@ class SensorList(Frame):
             is_last = index == len(self.config_mng.get_sensors()) - 1
             sensor_item = SensorItem(self.item_container, self.config_mng.get_sensors()[index],
                                      self.config_mng.get_window_settings().value_history_size,
-                                     self._on_disable_sensor, self._on_select_sensor, self._on_value_update, index, self.list_width, is_last)
+                                     self._on_disable_sensor, self._on_select_sensor, self._on_value_update,
+                                     index, self.list_width, is_last, self.config_mng.get_window_settings().mode)
             sensor_item.grid(row=index, sticky="w")
             self.item_views.append(sensor_item)
         self.scroll_container.create_window(0, 0, anchor="w", window=self.item_container)

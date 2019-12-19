@@ -3,6 +3,7 @@ from tkinter import Frame, Canvas, Label, BaseWidget
 from typing import Callable
 from SensorMonitor.Manager.colorManager import ColorManager
 from SensorMonitor.Worker.demoValueWorker import DemoValueWorker
+from SensorMonitor.Worker.sensorValuesWorker import SensorValuesWorker
 from SensorMonitor.DataContainer.sensorValues import SensorValues
 from SensorMonitor.DataContainer.sensor import Sensor
 
@@ -27,6 +28,7 @@ class SensorItem(Frame):
                  index: int,
                  item_width: float,
                  is_last: bool = False,
+                 mode: str = "Demo",
                  *args, **kwargs):
         """Initializes the SensorItem widget.
 
@@ -39,6 +41,7 @@ class SensorItem(Frame):
         :param index: int = the index of this widget in the sensor list.
         :param item_width: float = the width of the widget in pixels.
         :param is_last: bool = whether this item is the last one in the sensor list (then it needs no divider line).
+        :param mode: str = The mode the application runs in (Demo or Live).
         :param args: = can be ignored but are needed for internal purposes from tkinter.
         :param kwargs: = can be ignored but are needed for internal purposes from tkinter.
         """
@@ -56,6 +59,7 @@ class SensorItem(Frame):
         self.height = self.winfo_reqheight()
         self.item_width = item_width
         self.is_last = is_last
+        self.mode = mode
         self.sensor_values = SensorValues(history_size)
         self.worker_queue = None
         self.worker = None
@@ -177,9 +181,14 @@ class SensorItem(Frame):
         """Starts the value worker thread and listens to values from it via a queue."""
 
         self.worker_queue = queue.Queue()
-        self.worker = DemoValueWorker(self.data.gpioPin, self.worker_queue)
-        self.worker.start()
-        self.after(100, self._on_new_value)
+        if self.mode == "Demo":
+            self.worker = DemoValueWorker(self.data.gpioPin, self.worker_queue)
+            self.worker.start()
+            self.after(100, self._on_new_value)
+        elif self.mode == "Live":
+            self.worker = SensorValuesWorker(self.data.gpioPin, self.worker_queue)
+            self.worker.start()
+            self.after(100, self._on_new_value)
 
     def stop_value_collection(self):
         """Stops the value worker thread."""
@@ -315,6 +324,9 @@ class SensorItem(Frame):
         except queue.Empty:
             self.after(100, self._on_new_value)
             return
+
+        # Apply calibration offset
+        new_values.value = new_values.value + self.data.offset
 
         self.sensor_values.add_new_value(new_values.value, new_values.timestamp)
         self.value_update_callback(self.index, self.data.name, self.sensor_values)
