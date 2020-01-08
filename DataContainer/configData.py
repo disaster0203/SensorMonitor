@@ -2,8 +2,10 @@ from typing import List
 from SensorMonitor.DataContainer.sensor import Sensor
 from SensorMonitor.DataContainer.windowSettings import WindowSettings
 from SensorMonitor.DataContainer.outputSettings import OutputSettings
+from SensorMonitor.Manager.jsonManager import JsonManager
 
 
+@JsonManager.register
 class ConfigData:
     """Container class that stores all config settings.
 
@@ -13,7 +15,7 @@ class ConfigData:
     :param output_settings: OutputSettings = stores the output settings like file path, file name, extension.
     """
 
-    def __init__(self, sensors: List[Sensor], window_settings: WindowSettings, output_settings: OutputSettings):
+    def __init__(self, sensors: List[Sensor]  = None, window_settings: WindowSettings = None, output_settings: OutputSettings = None):
         """Initializes this class and stores the given values in their corresponding fields.
 
         :param sensors: List[Sensor] = a list of all sensor objects to use. Stores sensor names, colors, gpio pins, etc.

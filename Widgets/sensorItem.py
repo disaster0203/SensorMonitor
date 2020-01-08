@@ -15,7 +15,7 @@ class SensorItem(Frame):
     sensor_name = None
     disable_btn = None
     pin_nr = None
-    pin_icon = None
+    pin_label = None
     divider = None
 
     def __init__(self,
@@ -107,17 +107,26 @@ class SensorItem(Frame):
             self.disable_btn = self.colorMng.get_disabled_icon(self.colorMng.get_disabled_signal_color(), self.disable_btn, 20, 20, 2)
         self.disable_btn.grid(column=2, row=0, columnspan=2, sticky="e", padx=5, pady=5)
 
-        self.pin_nr = Label(self, text="GPIO", fg=self.colorMng.get_foreground_color(), bg=self.colorMng.get_default_color(), padx=5)
+        self.pin_label = Label(self, text="GPIO", fg=self.colorMng.get_foreground_color(), bg=self.colorMng.get_default_color(), padx=5)
+        self.pin_label.bind("<Motion>", self._hover_sensor)
+        self.pin_label.bind("<Leave>", self._unhover_sensor)
+        self.pin_label.bind("<Button-1>", self._change_sensor_state)
+        self.pin_label.grid(column=2, row=1, sticky="e")
+
+        # Create list of pin numbers, separated with ','
+        pins = ""
+        for p in self.data.gpio_pins:
+            pins += str(p.pin_nr) + ","
+
+        # Remove last character (which is always a ',') if the string is not empty (which would mean that there are no gpio pins)
+        if len(pins) > 0:
+            pins = pins[:-1]
+
+        self.pin_nr = Label(self, text=pins, fg=self.colorMng.get_foreground_color(), bg=self.colorMng.get_default_color(), padx=5)
         self.pin_nr.bind("<Motion>", self._hover_sensor)
         self.pin_nr.bind("<Leave>", self._unhover_sensor)
-        self.pin_nr.bind("<Button-1>", self._change_sensor_state)
-        self.pin_nr.grid(column=2, row=1, sticky="e")
-
-        self.pin_icon = Label(self, text=self.data.gpioPin, fg=self.colorMng.get_foreground_color(), bg=self.colorMng.get_default_color(), padx=5)
-        self.pin_icon.bind("<Motion>", self._hover_sensor)
-        self.pin_icon.bind("<Leave>", self._unhover_sensor)
-        self.pin_icon.bind("<Button-1>", self._select_sensor)
-        self.pin_icon.grid(column=3, row=1, sticky="e")
+        self.pin_nr.bind("<Button-1>", self._select_sensor)
+        self.pin_nr.grid(column=3, row=1, sticky="e")
 
         if not self.is_last:  # add divider if not last item
             self.divider = Canvas(self, width=self.item_width, height=1, bg=self.colorMng.get_foreground_color(),
@@ -182,11 +191,11 @@ class SensorItem(Frame):
 
         self.worker_queue = queue.Queue()
         if self.mode == "Demo":
-            self.worker = DemoValueWorker(self.data.gpioPin, self.worker_queue)
+            self.worker = DemoValueWorker(self.data.gpioPin, self.worker_queue, self.data.update_interval)
             self.worker.start()
             self.after(100, self._on_new_value)
         elif self.mode == "Live":
-            self.worker = SensorValuesWorker(self.data.gpioPin, self.worker_queue)
+            self.worker = SensorValuesWorker(self.data.gpioPin, self.worker_queue, self.data.update_interval)
             self.worker.start()
             self.after(100, self._on_new_value)
 
@@ -215,8 +224,8 @@ class SensorItem(Frame):
             self.sensor_icon.configure(bg=self.colorMng.get_selected_color())
             self.sensor_name.configure(bg=self.colorMng.get_selected_color())
             self.disable_btn.configure(bg=self.colorMng.get_selected_color())
+            self.pin_label.configure(bg=self.colorMng.get_selected_color())
             self.pin_nr.configure(bg=self.colorMng.get_selected_color())
-            self.pin_icon.configure(bg=self.colorMng.get_selected_color())
             return True
         return False
 
@@ -229,8 +238,8 @@ class SensorItem(Frame):
             self.sensor_icon.configure(bg=self.colorMng.get_default_color())
             self.sensor_name.configure(bg=self.colorMng.get_default_color())
             self.disable_btn.configure(bg=self.colorMng.get_default_color())
+            self.pin_label.configure(bg=self.colorMng.get_default_color())
             self.pin_nr.configure(bg=self.colorMng.get_default_color())
-            self.pin_icon.configure(bg=self.colorMng.get_default_color())
             return True
         return False
 
@@ -249,8 +258,8 @@ class SensorItem(Frame):
         self.sensor_icon.configure(bg=self.colorMng.get_disabled_color())
         self.sensor_name.configure(bg=self.colorMng.get_disabled_color())
         self.disable_btn.configure(bg=self.colorMng.get_disabled_color())
+        self.pin_label.configure(bg=self.colorMng.get_disabled_color())
         self.pin_nr.configure(bg=self.colorMng.get_disabled_color())
-        self.pin_icon.configure(bg=self.colorMng.get_disabled_color())
 
     def enable(self):
         """Function that gets executed if the user enables the list item by clicking the disable icon. This method
@@ -267,8 +276,8 @@ class SensorItem(Frame):
         self.sensor_icon.configure(bg=self.colorMng.get_default_color())
         self.sensor_name.configure(bg=self.colorMng.get_default_color())
         self.disable_btn.configure(bg=self.colorMng.get_default_color())
+        self.pin_label.configure(bg=self.colorMng.get_default_color())
         self.pin_nr.configure(bg=self.colorMng.get_default_color())
-        self.pin_icon.configure(bg=self.colorMng.get_default_color())
 
     def _hover_sensor(self, event):
         """Function that gets executed if the user hovers with the mouse somewhere over the list item. This method
@@ -280,15 +289,15 @@ class SensorItem(Frame):
                 self.sensor_icon.configure(bg=self.colorMng.get_hover_selected_color())
                 self.sensor_name.configure(bg=self.colorMng.get_hover_selected_color())
                 self.disable_btn.configure(bg=self.colorMng.get_hover_selected_color())
+                self.pin_label.configure(bg=self.colorMng.get_hover_selected_color())
                 self.pin_nr.configure(bg=self.colorMng.get_hover_selected_color())
-                self.pin_icon.configure(bg=self.colorMng.get_hover_selected_color())
             else:
                 self.configure(bg=self.colorMng.get_hover_color())
                 self.sensor_icon.configure(bg=self.colorMng.get_hover_color())
                 self.sensor_name.configure(bg=self.colorMng.get_hover_color())
                 self.disable_btn.configure(bg=self.colorMng.get_hover_color())
+                self.pin_label.configure(bg=self.colorMng.get_hover_color())
                 self.pin_nr.configure(bg=self.colorMng.get_hover_color())
-                self.pin_icon.configure(bg=self.colorMng.get_hover_color())
 
     def _unhover_sensor(self, event):
         """Function that gets executed if the user leaves the list item after hovering. This method changes the appearance
@@ -299,15 +308,15 @@ class SensorItem(Frame):
             self.sensor_icon.configure(bg=self.colorMng.get_selected_color())
             self.sensor_name.configure(bg=self.colorMng.get_selected_color())
             self.disable_btn.configure(bg=self.colorMng.get_selected_color())
+            self.pin_label.configure(bg=self.colorMng.get_selected_color())
             self.pin_nr.configure(bg=self.colorMng.get_selected_color())
-            self.pin_icon.configure(bg=self.colorMng.get_selected_color())
         else:
             self.configure(bg=self.colorMng.get_default_color())
             self.sensor_icon.configure(bg=self.colorMng.get_default_color())
             self.sensor_name.configure(bg=self.colorMng.get_default_color())
             self.disable_btn.configure(bg=self.colorMng.get_default_color())
+            self.pin_label.configure(bg=self.colorMng.get_default_color())
             self.pin_nr.configure(bg=self.colorMng.get_default_color())
-            self.pin_icon.configure(bg=self.colorMng.get_default_color())
 
     def _on_new_value(self):
         """Function that listens to new values from the value worker and sends them to SensorValues.
