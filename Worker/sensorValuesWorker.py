@@ -1,29 +1,33 @@
-import RPi.GPIO as GPIO
 import time
 import threading
 from queue import Queue
 from datetime import datetime
 from typing import List
+import SensorMonitor.DataContainer.converterFunctions as Converter
 from SensorMonitor.DataContainer.valueTimestampTuple import ValueTimestampTuple
 from SensorMonitor.DataContainer.gpio import GPIO
+from SensorMonitor.Manager.ads1256 import ADS1256
 
 
 class SensorValuesWorker:
     """Worker class that contains a thread that can be used to access sensor values."""
 
-    def __init__(self, gpio: List[GPIO], queue: Queue, update_interval: float = 0.5):
+    def __init__(self, type: str, gpio: List[GPIO], queue: Queue, update_interval: float = 0.5):
         """Initializes the SensorValuesWorker
 
+        :param type: str = the type of the sensor.
         :param gpio: List[GPIO] = the GPIO pins of the sensor plus their mode.
         :param queue: Queue = the queue to communicate with the gui thread.
         :param update_interval: float = the time in seconds between two new values.
         """
 
+        self._converter_function = Converter.get_converter_function(type)
         self._gpio = gpio
         self._queue = queue
         self._update_interval = update_interval
         self._run = False
         self._sensor_thread = None
+        self.ADC = None
 
     def is_running(self) -> bool:
         """Returns whether the thread is currently running or not.
@@ -40,12 +44,8 @@ class SensorValuesWorker:
         if self._run:
             return
 
-        GPIO.setmode(GPIO.BCM)
-        for gpio in self._gpio:
-            if gpio.mode == "IN":
-                GPIO.setup(gpio.pin_nr, GPIO.IN)
-            else:
-                GPIO.setup(gpio.pin_nr, GPIO.OUT)
+        self.ADC = ADS1256()
+        self.ADC.ads1256_init()
 
         self._run = True
         self._sensor_thread = threading.Thread(target=self._thread_function)
@@ -66,10 +66,12 @@ class SensorValuesWorker:
 
         while self._run:
             # Collect value from the input gpio pin
-            value = None
+            value = -1
             for gpio in self._gpio:
                 if gpio.mode == "IN":
-                    value = GPIO.input(gpio.pin_nr)
+                    value = self.ADC.ads1256_get_channel_value_in_volt(gpio.pin_nr)
+                    if self._converter_function is not None:
+                        value = self._converter_function(value)
                     break
 
             # Put value in queue so that other threads can receive it
