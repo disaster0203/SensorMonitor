@@ -191,11 +191,11 @@ class SensorItem(Frame):
 
         self.worker_queue = queue.Queue()
         if self.mode == "Demo":
-            self.worker = DemoValueWorker(self.data.gpioPin, self.worker_queue, self.data.update_interval)
+            self.worker = DemoValueWorker(self.data.type, self.data.gpioPin, self.worker_queue, self.data.update_interval)
             self.worker.start()
             self.after(100, self._on_new_value)
         elif self.mode == "Live":
-            self.worker = SensorValuesWorker(self.data.gpioPin, self.worker_queue, self.data.update_interval)
+            self.worker = SensorValuesWorker(self.data.type, self.data.gpioPin, self.worker_queue, self.data.update_interval)
             self.worker.start()
             self.after(100, self._on_new_value)
 

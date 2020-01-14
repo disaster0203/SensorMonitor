@@ -4,6 +4,7 @@ import random
 from queue import Queue
 from datetime import datetime
 from typing import List
+import SensorMonitor.DataContainer.converterFunctions as Converter
 from SensorMonitor.DataContainer.valueTimestampTuple import ValueTimestampTuple
 from SensorMonitor.DataContainer.gpio import GPIO
 
@@ -11,15 +12,17 @@ from SensorMonitor.DataContainer.gpio import GPIO
 class DemoValueWorker:
     """Worker class that contains a thread that can be used to simulate sensors by creating random numbers."""
 
-    def __init__(self, gpio: List[GPIO], queue: Queue, update_interval: float = 0.5):
+    def __init__(self, type: str, gpio: List[GPIO], queue: Queue, update_interval: float = 0.5):
         """Initializes the DemoValueWorker
 
+        :param type: str = the type of the sensor.
         :param gpio: List[GPIO] = dummy GPIO pin of a virtual sensor. It is only needed
                                   here to offer the same interface as the real value worker.
         :param queue: Queue = the queue to communicate with the gui thread.
         :param update_interval: float = the time in seconds between two new values.
         """
 
+        self._converter_function = Converter.get_converter_function(type)
         self._gpio = gpio
         self._queue = queue
         self._update_interval = update_interval

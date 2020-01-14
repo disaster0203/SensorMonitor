@@ -9,6 +9,7 @@ class Sensor:
 
         The following settings are provided:
         :param name: str = the name of the sensor that is displayed in the GUI.
+        :param type: str = the type of the sensor that is used to chose the right value converter function.
         :param gpio_pins: List[GPIO] = the GPIO pins this sensor uses. Needed to access the sensor.
         :param offset: float = calibration value that will be added to each received sensor value.
         :param active: bool = whether the sensor is active or not. If it is inactive no data will be recorded.
@@ -18,11 +19,12 @@ class Sensor:
         :param update_interval: float = How often the software triggers the sensor to receive new values (in seconds).
         """
 
-    def __init__(self, name: str = "", gpio_pins: List[GPIO] = None, offset: float = 0, active: bool = False, color: str = "", unit: str = "",
-                 update_interval: float = 0):
+    def __init__(self, name: str = "", type: str = "", gpio_pins: List[GPIO] = None, offset: float = 0, active: bool = False, color: str = "", \
+                 unit: str = "", update_interval: float = 0):
         """Initializes this class and stores the given values in their corresponding fields.
 
         :param name: str = the name of the sensor that is displayed in the GUI.
+        :param type: str = the type of the sensor that is used to chose the right value converter function.
         :param gpio_pins: List[GPIO] = the GPIO pins this sensor uses. Needed to access the sensor.
         :param offset: float = calibration value that will be added to each received sensor value.
         :param active: bool = whether the sensor is active or not. If it is inactive no data will be recorded.
@@ -33,6 +35,7 @@ class Sensor:
         """
 
         self.name = name
+        self.type = type
         self.gpio_pins = gpio_pins
         self.offset = offset
         self.active = active

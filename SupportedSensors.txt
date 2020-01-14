@@ -1,0 +1,12 @@
+In order to use a sensor, copy the exact name from the list into the config.json as a sensors type attribute
+E.g.:
+"sensors": [
+        {
+            "name": "TestSensor",
+	    "type": "DistanceSensor_GP2Y0A710K0F"
+            "gpio_pins": [
+                {
+                    ...
+
+The following sensors are supported by SensorMonitor:
+- DistanceSensor_GP2Y0A710K0F
