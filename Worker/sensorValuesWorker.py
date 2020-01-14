@@ -5,7 +5,7 @@ from queue import Queue
 from datetime import datetime
 from typing import List
 from SensorMonitor.DataContainer.valueTimestampTuple import ValueTimestampTuple
-from SensorMonitor.DataContainer.gpio import GPIO, GPIOMode
+from SensorMonitor.DataContainer.gpio import GPIO
 
 
 class SensorValuesWorker:
@@ -42,7 +42,7 @@ class SensorValuesWorker:
 
         GPIO.setmode(GPIO.BCM)
         for gpio in self._gpio:
-            if gpio.mode == GPIOMode.IN:
+            if gpio.mode == "IN":
                 GPIO.setup(gpio.pin_nr, GPIO.IN)
             else:
                 GPIO.setup(gpio.pin_nr, GPIO.OUT)
@@ -68,7 +68,7 @@ class SensorValuesWorker:
             # Collect value from the input gpio pin
             value = None
             for gpio in self._gpio:
-                if gpio.mode == GPIOMode.IN:
+                if gpio.mode == "IN":
                     value = GPIO.input(gpio.pin_nr)
                     break
 

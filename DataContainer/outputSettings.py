@@ -1,3 +1,7 @@
+from SensorMonitor.Manager.jsonManager import JsonManager
+
+
+@JsonManager.register
 class OutputSettings:
     """Container class for output settings.
 
@@ -11,7 +15,7 @@ class OutputSettings:
                             go to the next column. By default the separator is a comma (",").
     """
 
-    def __init__(self, default_path: str, default_filename: str, default_file_extension: str, separator: str):
+    def __init__(self, default_path: str = "", default_filename: str = "", default_file_extension: str = "", separator: str = ""):
         """Initializes this class and stores the given values in their corresponding fields.
 
         :param default_path: str = the path (just the folder, no file) where measurement files are created.
@@ -23,7 +27,7 @@ class OutputSettings:
                                 go to the next column. By default the separator is a comma (",").
         """
 
-        self.defaultPath = default_path
-        self.defaultFilename = default_filename
-        self.defaultFileExtension = default_file_extension
+        self.default_path = default_path
+        self.default_filename = default_filename
+        self.default_file_extension = default_file_extension
         self.separator = separator

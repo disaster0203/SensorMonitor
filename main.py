@@ -93,7 +93,7 @@ class MainWindow:
         self.path_input = Entry(self.control_area, bd=0, fg=colorMng.get_foreground_color(),
                                 bg=colorMng.get_secondary_color(), font="Helvetica 14")
         self.path_input.grid(column=0, row=0, sticky="we", padx=10, pady=10)
-        self.path_input.insert(0, self._create_platform_specific_path(configMng.get_output_settings().defaultPath))
+        self.path_input.insert(0, self._create_platform_specific_path(configMng.get_output_settings().default_path))
         # Open folder button
         self.folder_icon = Canvas(self.control_area, width=20, height=20, bg=colorMng.get_default_color(),
                                   highlightthickness=0, relief="ridge")

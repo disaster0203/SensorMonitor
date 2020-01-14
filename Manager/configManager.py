@@ -1,11 +1,11 @@
-import jsonpickle
 import os
 from typing import List, Optional
 from SensorMonitor.DataContainer.sensor import Sensor
 from SensorMonitor.DataContainer.windowSettings import WindowSettings
 from SensorMonitor.DataContainer.outputSettings import OutputSettings
 from SensorMonitor.DataContainer.configData import ConfigData
-from SensorMonitor.DataContainer.gpio import GPIO, GPIOMode
+from SensorMonitor.DataContainer.gpio import GPIO
+from SensorMonitor.Manager.jsonManager import JsonManager
 
 
 class ConfigManager:
@@ -38,17 +38,13 @@ class ConfigManager:
         if not os.path.exists(path) or not os.path.isfile(path):
             self.config_data = self.__create_config_from_defaults__()
         else:
-            config_file = open(self.path_to_config, "r")
-            content = config_file.read()
-            self.config_data = jsonpickle.decode(content)
+            self.config_data = JsonManager.from_file(self.path_to_config, "r")
 
     def write_config_data(self):
         """Writes the data that is currently stored in an ConfigData variable into the config file on the disk."""
 
         if self.config_data is not None and os.path.exists(self.path_to_config) and os.path.isfile(self.path_to_config):
-            config_file = open(self.path_to_config, "w")
-            config_file.write(jsonpickle.encode(self.config_data))
-            config_file.close()
+            JsonManager.to_file(self.config_data, self.path_to_config, "w")
 
     def get_sensor(self, index: int) -> Optional[Sensor]:
         """Returns the sensor config data at the given index from the list of sensors. If the index exceeds the range
@@ -151,21 +147,20 @@ class ConfigManager:
         - separator = ','
         Sensor List with one sensor
         - name = 'TestSensor'
-        - gpioPin = 1
+        - gpioPin = [1, 'IN']
         - offset = 0
         - active = True
         - color = '#FF0000'
         - unit = 'C' (for degree celsius; the little circle is an invalid character in utf-8)
+        - update_interval = 0.5
 
         :return a ConfigData object containing the default config values.
         """
         window = WindowSettings(800, 600, 100, "Dark", "Live")
         output = OutputSettings("../", "Measurement_", "csv", ",")
-        sensors = [Sensor("TestSensor", [GPIO(1, GPIOMode.IN)], 0, True, "#FF0000", "C")]
+        sensors = [Sensor("TestSensor", [GPIO(1, "IN")], 0, True, "#FF0000", "C", 0.5)]
         new_config = ConfigData(sensors, window, output)
 
-        config_file = open(self.path_to_config, "x")
-        config_file.write(jsonpickle.encode(new_config))
-        config_file.close()
+        JsonManager.to_file(new_config, self.path_to_config, "x")
 
         return new_config

@@ -1,3 +1,7 @@
+from SensorMonitor.Manager.jsonManager import JsonManager
+
+
+@JsonManager.register
 class WindowSettings:
     """Container class for window settings.
 
@@ -10,7 +14,7 @@ class WindowSettings:
     :param mode: str = The mode the application runs in (Demo or Live).
     """
 
-    def __init__(self, width: int, height: int, value_history_size: int, color_theme: str, mode: str):
+    def __init__(self, width: int = 0, height: int = 0, value_history_size: int = 0, color_theme: str = "", mode: str = ""):
         """Initializes this class and stores the given values in their corresponding fields.
 
         :param width: int = the width of the application window in pixels
