@@ -156,10 +156,10 @@ class SensorList(Frame):
             return
 
         # Initialize and start write thread
-        self.file_worker = FileWorker(self.config_mng.get_output_settings().defaultPath +
-                                      self.config_mng.get_output_settings().defaultFilename + "_",
+        self.file_worker = FileWorker(self.config_mng.get_output_settings().default_path +
+                                      self.config_mng.get_output_settings().default_filename + "_",
                                       self.item_queues,
-                                      self.config_mng.get_output_settings().defaultFileExtension,
+                                      self.config_mng.get_output_settings().default_file_extension,
                                       self.config_mng.get_output_settings().separator)
         self.file_worker.start()
 
