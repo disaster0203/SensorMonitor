@@ -62,5 +62,5 @@ class DemoValueWorker:
         and puts them together with a timestamp into a queue."""
         
         while self._run:
-            self._queue.put(ValueTimestampTuple(random.uniform(-3, 3), datetime.now().strftime("%d.%m.%Y-%H:%M:%S")))
+            self._queue.put(ValueTimestampTuple([random.uniform(-3, 3)], datetime.now().strftime("%d.%m.%Y-%H:%M:%S")))
             time.sleep(self._update_interval)

@@ -75,5 +75,5 @@ class GpioWorker:
                     break
 
             # Put value in queue so that other threads can receive it
-            self._queue.put(ValueTimestampTuple(value, datetime.now().strftime("%d.%m.%Y-%H:%M:%S")))
+            self._queue.put(ValueTimestampTuple([value], datetime.now().strftime("%d.%m.%Y-%H:%M:%S")))
             time.sleep(self._update_interval)

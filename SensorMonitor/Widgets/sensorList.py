@@ -229,7 +229,7 @@ class SensorList(Frame):
         :param values: SensorValues = the new values.
         """
 
-        self.item_queues[name].put(ValueTimestampTuple(values.current, values.timestamp))
+        self.item_queues[name].put(ValueTimestampTuple([values.current], values.timestamp))
 
         if index == self.currently_selected_index:
             self.value_callback(index, name, values)
