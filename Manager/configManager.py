@@ -158,7 +158,8 @@ class ConfigManager:
         """
         window = WindowSettings(800, 600, 100, "Dark", "Live")
         output = OutputSettings("../", "Measurement_", "csv", ",")
-        sensors = [Sensor("TestSensor", "DistanceSensor_GP2Y0A710K0F", [GPIO(1, "IN")], 0, True, "#FF0000", "C", 0.5)]
+        sensors = [Sensor("Distance Sensor 1", "DistanceSensor_GP2Y0A710K0F", [GPIO(1, "IN")], 0, True, "#FF0000", "cm", 0.5),
+                   Sensor("Distance Sensor 2", "DistanceSensor_GP2Y0A21YK0F", [GPIO(2, "IN")], 0, True, "#00FF00", "cm", 0.5)]
         new_config = ConfigData(sensors, window, output)
 
         JsonManager.to_file(new_config, self.path_to_config, "x")
