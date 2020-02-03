@@ -3,6 +3,7 @@ import queue
 import os
 import platform
 from tkinter import Tk, filedialog, Frame, Entry, Canvas, Label, END
+from typing import List
 from SensorMonitor.Manager.configManager import ConfigManager
 from SensorMonitor.Manager.colorManager import ColorManager
 from SensorMonitor.Widgets.sensorList import SensorList
@@ -116,10 +117,10 @@ class MainWindow:
         self.graph_area.grid_columnconfigure(0, weight=1)
         self.graph_area.grid(column=1, row=1, sticky="nswe")
         if selected_sensor_data is None:
-            temp_color = "#000000"
+            temp_colors = ["#000000"]
         else:
-            temp_color = selected_sensor_data.get_data().color
-        self.graph = GraphView(self.graph_area, [], configMng.get_window_settings().value_history_size, temp_color, 5,
+            temp_colors = selected_sensor_data.get_data().colors
+        self.graph = GraphView(self.graph_area, [[]], configMng.get_window_settings().value_history_size, temp_colors, 5,
                                configMng.get_window_settings().width * 0.75 - 20,  # minus padding
                                configMng.get_window_settings().height / 7 * 4 - 20)  # minus padding
         self.graph.grid(column=0, row=0, sticky="nswe", padx=10, pady=10)
@@ -144,10 +145,10 @@ class MainWindow:
             temp_avg = ""
         else:
             temp_name = selected_sensor_data.get_data().name
-            temp_current = round(selected_sensor_data.get_values().current, 3)
-            temp_max = round(selected_sensor_data.get_values().max, 3)
-            temp_min = round(selected_sensor_data.get_values().min, 3)
-            temp_avg = round(selected_sensor_data.get_values().avg, 3)
+            temp_current = self.create_value_string(selected_sensor_data.get_values().current, selected_sensor_data.get_data().units)
+            temp_max = self.create_value_string(selected_sensor_data.get_values().max, selected_sensor_data.get_data().units)
+            temp_min = self.create_value_string(selected_sensor_data.get_values().min, selected_sensor_data.get_data().units)
+            temp_avg = self.create_value_string(selected_sensor_data.get_values().avg, selected_sensor_data.get_data().units)
 
         self.sensor_name = Label(self.value_area, font="Helvetica 14 bold", text=temp_name,
                                  fg=colorMng.get_foreground_color(), bg=colorMng.get_default_color())
@@ -213,7 +214,7 @@ class MainWindow:
             self.min_value.configure(text=round(self.sensor_list.get_sensors()[index].get_values().min, 3))
             self.avg_value.configure(text=round(self.sensor_list.get_sensors()[index].get_values().avg, 3))
             self.graph.replace(self.sensor_list.get_sensors()[index].get_values().last_values,
-                               self.sensor_list.get_sensors()[index].get_data().color)
+                               self.sensor_list.get_sensors()[index].get_data().colors)
 
     def on_select(self, index: int, name: str):
         """Callback function that gets called if a sensor item was selected.
@@ -234,7 +235,31 @@ class MainWindow:
                 self.max_value.configure(text=round(values.max, 3))
                 self.min_value.configure(text=round(values.min, 3))
                 self.avg_value.configure(text=round(values.avg, 3))
-                self.graph.replace(values.last_values, sensors[index].get_data().color)
+                self.graph.replace(values.last_values, sensors[index].get_data().colors)
+
+    @staticmethod
+    def create_value_string(values: List[float], units: List[str]) -> str:
+        """Helper function that creates a string with rounded values plus unit for display purposes.
+
+                :param values: List[float] = list of parallel recorded sensor values from one timestamp.
+                :param units: List[str] = list of SI units the sensor values have.
+                :return a string containing all values and units in the format "Val1 Unit1 | Val2 Unit2 | ..." or "" if the values list is empty.
+                """
+        if len(units) == 0 and len(values) != 0:
+            for val in values:
+                units.append("")
+
+        if len(values) != len(units) or len(values) == 0:
+            print("Main [create_value_string] Error: The sizes of values and units do not match. Cannot create value string for " +
+                  "displaying in the GUI.")
+            return ""
+
+        rounded = []
+        for value in values:
+            rounded.append(str(round(value, 2)))
+        for i, value in enumerate(rounded):
+            rounded[i] = value + " " + units[i]
+        return " | ".join(rounded)
 
     def on_value(self, index: int, name: str, values: SensorValues):
         """Callback function that gets called if now values from the currently selected sensor arrived.
@@ -243,12 +268,18 @@ class MainWindow:
         :param name: str = the name of the sensor.
         :param values: SensorValues = the new values object.
         """
+        current_sensor_units = None
+        for sensor in configMng.get_sensors():
+            if sensor.name == name:
+                current_sensor_units = sensor.units
+        if current_sensor_units is None:
+            current_sensor_units = [""]
 
         self.sensor_name.configure(text=name)
-        self.current_value.configure(text=round(values.current, 3))
-        self.max_value.configure(text=round(values.max, 3))
-        self.min_value.configure(text=round(values.min, 3))
-        self.avg_value.configure(text=round(values.avg, 3))
+        self.current_value.configure(text=self.create_value_string(values.current, current_sensor_units))
+        self.max_value.configure(text=self.create_value_string(values.max, current_sensor_units))
+        self.min_value.configure(text=self.create_value_string(values.min, current_sensor_units))
+        self.avg_value.configure(text=self.create_value_string(values.avg, current_sensor_units))
         self.graph.add_value(values.current)
 
     def open_folder_dialog(self, event):
