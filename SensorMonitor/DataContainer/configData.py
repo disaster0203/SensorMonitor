@@ -15,7 +15,7 @@ class ConfigData:
     :param output_settings: OutputSettings = stores the output settings like file path, file name, extension.
     """
 
-    def __init__(self, sensors: List[Sensor]  = None, window_settings: WindowSettings = None, output_settings: OutputSettings = None):
+    def __init__(self, sensors: List[Sensor] = None, window_settings: WindowSettings = None, output_settings: OutputSettings = None):
         """Initializes this class and stores the given values in their corresponding fields.
 
         :param sensors: List[Sensor] = a list of all sensor objects to use. Stores sensor names, colors, gpio pins, etc.

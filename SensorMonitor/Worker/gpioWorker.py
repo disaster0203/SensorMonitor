@@ -12,16 +12,16 @@ from SensorMonitor.Manager.ads1256 import ADS1256
 class GpioWorker:
     """Worker class that contains a thread that can be used to access gpio sensor values."""
 
-    def __init__(self, type: str, gpio: List[GPIO], queue: Queue, update_interval: float = 0.5):
+    def __init__(self, device_type: str, gpio: List[GPIO], queue: Queue, update_interval: float = 0.5):
         """Initializes the SensorValuesWorker
 
-        :param type: str = the type of the sensor.
+        :param device_type: str = the type of the sensor.
         :param gpio: List[GPIO] = the GPIO pins of the sensor plus their mode.
         :param queue: Queue = the queue to communicate with the gui thread.
         :param update_interval: float = the time in seconds between two new values.
         """
 
-        self._converter_function = Converter.get_converter_function(type)
+        self._converter_function = Converter.get_converter_function(device_type)
         self._gpio = gpio
         self._queue = queue
         self._update_interval = update_interval
