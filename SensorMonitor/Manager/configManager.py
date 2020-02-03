@@ -5,6 +5,7 @@ from SensorMonitor.DataContainer.windowSettings import WindowSettings
 from SensorMonitor.DataContainer.outputSettings import OutputSettings
 from SensorMonitor.DataContainer.configData import ConfigData
 from SensorMonitor.DataContainer.gpio import GPIO
+from SensorMonitor.DataContainer.i2cDevice import I2CDevice
 from SensorMonitor.Manager.jsonManager import JsonManager
 
 
@@ -151,15 +152,17 @@ class ConfigManager:
         - offset = 0
         - active = True
         - color = '#FF0000'
-        - unit = 'C' (for degree celsius; the little circle is an invalid character in utf-8)
+        - units = 'C' (for degree celsius; the little circle is an invalid character in utf-8)
         - update_interval = 0.5
 
         :return a ConfigData object containing the default config values.
         """
         window = WindowSettings(800, 600, 100, "Dark", "Live")
         output = OutputSettings("../", "Measurement_", "csv", ",")
-        sensors = [Sensor("Distance Sensor 1", "DistanceSensor_GP2Y0A710K0F", [GPIO(1, "IN")], 0, True, "#FF0000", "cm", 0.5),
-                   Sensor("Distance Sensor 2", "DistanceSensor_GP2Y0A21YK0F", [GPIO(2, "IN")], 0, True, "#00FF00", "cm", 0.5)]
+        sensors = [Sensor("Distance Sensor 1", "DistanceSensor_GP2Y0A710K0F", [GPIO(1, "IN")], None, 1, 0, True, ["#FF0000"], ["cm"], 0.5),
+                   Sensor("Distance Sensor 2", "DistanceSensor_GP2Y0A21YK0F", [GPIO(2, "IN")], None, 1, 0, False, ["#00FF00"], ["cm"], 0.5),
+                   Sensor("Weather Sensor", "WeatherSensor_BMP280", None, I2CDevice(1), 3, 0, False, ["#FF0000", "#00FF00", "#0000FF"],
+                          ["C", "hPa", "m"], 0.5)]
         new_config = ConfigData(sensors, window, output)
 
         JsonManager.to_file(new_config, self.path_to_config, "x")
