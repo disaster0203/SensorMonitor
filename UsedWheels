@@ -9,4 +9,5 @@ threading
 csv
 
 
-jsonpickle
+i2cdevice
+smbus2

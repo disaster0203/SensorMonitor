@@ -10,3 +10,5 @@ E.g.:
 
 The following sensors are supported by SensorMonitor:
 - DistanceSensor_GP2Y0A710K0F
+- DistanceSensor_GP2Y0A21YK0F
+- WeatherSensor_BMP280
