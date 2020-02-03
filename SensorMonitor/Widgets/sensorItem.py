@@ -4,6 +4,7 @@ from typing import Callable
 from SensorMonitor.Manager.colorManager import ColorManager
 from SensorMonitor.Worker.demoValueWorker import DemoValueWorker
 from SensorMonitor.Worker.gpioWorker import GpioWorker
+from SensorMonitor.Worker.bmp280Worker import BMP280Worker
 from SensorMonitor.DataContainer.sensorValues import SensorValues
 from SensorMonitor.DataContainer.sensor import Sensor
 
@@ -60,7 +61,7 @@ class SensorItem(Frame):
         self.item_width = item_width
         self.is_last = is_last
         self.mode = mode
-        self.sensor_values = SensorValues(history_size)
+        self.sensor_values = SensorValues(history_size, self.data.value_count)
         self.worker_queue = None
         self.worker = None
         self.setup_layout()
@@ -195,9 +196,21 @@ class SensorItem(Frame):
             self.worker.start()
             self.after(100, self._on_new_value)
         elif self.mode == "Live":
-            self.worker = GpioWorker(self.data.device_type, self.data.gpioPin, self.worker_queue, self.data.update_interval)
-            self.worker.start()
-            self.after(100, self._on_new_value)
+            if self.data.gpio_pins is not None:
+                self.worker = GpioWorker(self.data.device_type, self.data.gpioPin, self.worker_queue, self.data.update_interval)
+                self.worker.start()
+                self.after(100, self._on_new_value)
+            elif self.data.i2c_device is not None:
+                if self.data.device_type == "WeatherSensor_BMP280":
+                    self.worker = BMP280Worker(self.worker_queue, self.data.i2c_device.bus, self.data.update_interval)
+                    self.worker.start()
+                    self.after(100, self._on_new_value)
+                else:
+                    print("SensorItem [start_value_collection] Error: Unsupported I2CDevice" + self.data.device_type + " Cannot find worker to " +
+                          "communicate with the device.")
+            else:
+                print("SensorItem [start_value_collection] Error: Either GPIO or I2CDevice have to be set for each sensor. Cannot start worker " +
+                      "since both classes are None.")
 
     def stop_value_collection(self):
         """Stops the value worker thread."""
@@ -335,7 +348,8 @@ class SensorItem(Frame):
             return
 
         # Apply calibration offset
-        new_values.value = new_values.value + self.data.offset
+        for i, value in enumerate(new_values.value):
+            new_values.value[i] = value + self.data.offset
 
         self.sensor_values.add_new_value(new_values.value, new_values.timestamp)
         self.value_update_callback(self.index, self.data.name, self.sensor_values)
