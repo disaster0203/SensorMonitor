@@ -9,8 +9,8 @@ from SensorMonitor.DataContainer.gpio import GPIO
 from SensorMonitor.Manager.ads1256 import ADS1256
 
 
-class SensorValuesWorker:
-    """Worker class that contains a thread that can be used to access sensor values."""
+class GpioWorker:
+    """Worker class that contains a thread that can be used to access gpio sensor values."""
 
     def __init__(self, type: str, gpio: List[GPIO], queue: Queue, update_interval: float = 0.5):
         """Initializes the SensorValuesWorker

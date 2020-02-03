@@ -3,7 +3,7 @@ from tkinter import Frame, Canvas, Label, BaseWidget
 from typing import Callable
 from SensorMonitor.Manager.colorManager import ColorManager
 from SensorMonitor.Worker.demoValueWorker import DemoValueWorker
-from SensorMonitor.Worker.sensorValuesWorker import SensorValuesWorker
+from SensorMonitor.Worker.gpioWorker import GpioWorker
 from SensorMonitor.DataContainer.sensorValues import SensorValues
 from SensorMonitor.DataContainer.sensor import Sensor
 
@@ -195,7 +195,7 @@ class SensorItem(Frame):
             self.worker.start()
             self.after(100, self._on_new_value)
         elif self.mode == "Live":
-            self.worker = SensorValuesWorker(self.data.type, self.data.gpioPin, self.worker_queue, self.data.update_interval)
+            self.worker = GpioWorker(self.data.type, self.data.gpioPin, self.worker_queue, self.data.update_interval)
             self.worker.start()
             self.after(100, self._on_new_value)
 
