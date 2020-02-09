@@ -137,7 +137,7 @@ class MainWindow:
         self.value_area.grid_columnconfigure(1, weight=3)
         self.value_area.grid(column=1, row=2, sticky="nswe")
         # Sensor name
-        if selected_sensor_data is None:
+        if selected_sensor_data is None or len(selected_sensor_data.get_values().current) == 0:
             temp_name = "Kein Sensor aktiv..."
             temp_current = ""
             temp_max = ""
@@ -209,12 +209,17 @@ class MainWindow:
             self.graph.clear()
         elif self.sensor_list.get_selected_index() == index:
             self.sensor_name.configure(text=name)
-            self.current_value.configure(text=round(self.sensor_list.get_sensors()[index].get_values().current, 3))
-            self.max_value.configure(text=round(self.sensor_list.get_sensors()[index].get_values().max, 3))
-            self.min_value.configure(text=round(self.sensor_list.get_sensors()[index].get_values().min, 3))
-            self.avg_value.configure(text=round(self.sensor_list.get_sensors()[index].get_values().avg, 3))
-            self.graph.replace(self.sensor_list.get_sensors()[index].get_values().last_values,
-                               self.sensor_list.get_sensors()[index].get_data().colors)
+            # Display values in GUI
+            temp_current = self.create_value_string(sensors[index].get_values().current, sensors[index].get_data().units)
+            temp_max = self.create_value_string(sensors[index].get_values().max, sensors[index].get_data().units)
+            temp_min = self.create_value_string(sensors[index].get_values().min, sensors[index].get_data().units)
+            temp_avg = self.create_value_string(sensors[index].get_values().avg, sensors[index].get_data().units)
+
+            self.current_value.configure(text=temp_current)
+            self.max_value.configure(text=temp_max)
+            self.min_value.configure(text=temp_min)
+            self.avg_value.configure(text=temp_avg)
+            self.graph.replace(sensors[index].get_values().last_values, sensors[index].get_data().colors)
 
     def on_select(self, index: int, name: str):
         """Callback function that gets called if a sensor item was selected.
@@ -227,15 +232,17 @@ class MainWindow:
         # Check if index is in range of sensor list
         sensors = self.sensor_list.get_sensors()
         if len(sensors) > 0 and index < len(sensors):
-            # Check if sensor has values
-            values = sensors[index].get_values()
-            if values is not None:
-                # Display values in GUI
-                self.current_value.configure(text=round(values.current, 3))
-                self.max_value.configure(text=round(values.max, 3))
-                self.min_value.configure(text=round(values.min, 3))
-                self.avg_value.configure(text=round(values.avg, 3))
-                self.graph.replace(values.last_values, sensors[index].get_data().colors)
+            # Display values in GUI
+            temp_current = self.create_value_string(sensors[index].get_values().current, sensors[index].get_data().units)
+            temp_max = self.create_value_string(sensors[index].get_values().max, sensors[index].get_data().units)
+            temp_min = self.create_value_string(sensors[index].get_values().min, sensors[index].get_data().units)
+            temp_avg = self.create_value_string(sensors[index].get_values().avg, sensors[index].get_data().units)
+
+            self.current_value.configure(text=temp_current)
+            self.max_value.configure(text=temp_max)
+            self.min_value.configure(text=temp_min)
+            self.avg_value.configure(text=temp_avg)
+            self.graph.replace(sensors[index].get_values().last_values, sensors[index].get_data().colors)
 
     @staticmethod
     def create_value_string(values: List[float], units: List[str]) -> str:

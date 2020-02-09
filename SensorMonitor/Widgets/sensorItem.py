@@ -84,7 +84,7 @@ class SensorItem(Frame):
         self.configure(bg=self.colorMng.get_default_color(), width=self.item_width)
 
         self.sensor_icon = Canvas(self, width=30, height=30, bg=self.colorMng.get_default_color(), highlightthickness=0, relief="ridge")
-        self.sensor_icon = self.colorMng.get_sensor_icon(self.data.color, self.sensor_icon, 30, 30)
+        self.sensor_icon = self.colorMng.get_sensor_icon(self.data.colors[0], self.sensor_icon, 30, 30)
         self.sensor_icon.bind("<Motion>", self._hover_sensor)
         self.sensor_icon.bind("<Leave>", self._unhover_sensor)
         self.sensor_icon.bind("<Button-1>", self._select_sensor)
@@ -116,12 +116,14 @@ class SensorItem(Frame):
 
         # Create list of pin numbers, separated with ','
         pins = ""
-        for p in self.data.gpio_pins:
-            pins += str(p.pin_nr) + ","
-
-        # Remove last character (which is always a ',') if the string is not empty (which would mean that there are no gpio pins)
-        if len(pins) > 0:
-            pins = pins[:-1]
+        if self.data.gpio_pins is None:
+            pins = "I2C"
+            # Remove last character (which is always a ',') if the string is not empty (which would mean that there are no gpio pins)
+            if len(pins) > 0:
+                pins = pins[:-1]
+        else:
+            for p in self.data.gpio_pins:
+                pins += str(p.pin_nr) + ","
 
         self.pin_nr = Label(self, text=pins, fg=self.colorMng.get_foreground_color(), bg=self.colorMng.get_default_color(), padx=5)
         self.pin_nr.bind("<Motion>", self._hover_sensor)

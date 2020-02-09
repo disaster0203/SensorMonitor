@@ -4,7 +4,7 @@ from smbus2 import SMBus
 from queue import Queue
 from datetime import datetime
 from SensorMonitor.DataContainer.valueTimestampTuple import ValueTimestampTuple
-from SensorMonitor.Manager.bmp280 import BMP280
+import SensorMonitor.Manager.bme280 as BME280
 
 
 class BMP280Worker:
@@ -40,7 +40,10 @@ class BMP280Worker:
         if self._run:
             return
 
-        self._bmp280 = BMP280(i2c_dev=self._bus)
+        #self._bmp280 = BMP280(i2c_dev=self._bus)
+        (chip_id, chip_version) = BME280.readBME280ID()
+        print ("Chip ID     :" + str(chip_id))
+        print ("Version     :" + str(chip_version))
 
         self._run = True
         self._sensor_thread = threading.Thread(target=self._thread_function)
@@ -59,11 +62,16 @@ class BMP280Worker:
     def _thread_function(self):
         """The function that actually runs inside the thread. It creates random float numbers each '_update_interval'
         and puts them together with a timestamp into a queue."""
-
+        time.sleep(1)
         while self._run:
             # Collect value from the input gpio pin
-            values = [self._bmp280.get_temperature(), self._bmp280.get_pressure(), self._bmp280.get_altitude()]
+            # values = [self._bmp280.get_temperature(), self._bmp280.get_pressure(), self._bmp280.get_altitude()]
 
             # Put value in queue so that other threads can receive it
+            # self._queue.put(ValueTimestampTuple(values, datetime.now().strftime("%d.%m.%Y-%H:%M:%S")))
+            
+            temperature,pressure,humidity = BME280.readBME280All()
+            values = [temperature, pressure, humidity]
             self._queue.put(ValueTimestampTuple(values, datetime.now().strftime("%d.%m.%Y-%H:%M:%S")))
+            
             time.sleep(self._update_interval)

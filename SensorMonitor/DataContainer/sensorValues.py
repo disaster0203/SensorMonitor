@@ -36,7 +36,6 @@ class SensorValues:
         self.min = []
         self.avg = []
         self.sum = []
-        self.value_count = 0
         self.timestamp = ""
         self._history_size = history_size
 
@@ -74,10 +73,10 @@ class SensorValues:
         self.min = []
         self.avg = []
         self.sum = []
-        self.value_count = 0
         self.timestamp = ""
 
         for value in range(self.value_count):
+            self.current.append(0)
             self.last_values.append([])
             self.max.append(-sys.maxsize - 1)
             self.min.append(sys.maxsize)

@@ -59,6 +59,21 @@ class ConfigManager:
             return self.config_data.sensors[index]
         else:
             return None
+        
+    def get_sensor_by_name(self, name: str) -> Optional[Sensor]:
+        """Returns the sensor config data from the sensor with the given name from the list of sensors. If the name is not found
+        in the sensor list this method will return 'None'.
+        :param name: str = the name of the sensor data to return.
+
+        :return The sensor data of the sensor with the given name or None if the name was not found in the sensor list.
+        """
+
+        if self.config_data is not None:
+            for sensor in self.config_data.sensors:
+                if sensor.name == name:
+                    return sensor
+        else:
+            return None
 
     def get_sensors(self) -> Optional[List[Sensor]]:
         """Returns the whole list of sensor config data. If the list is not initialized, 'None' will be returned.
@@ -160,8 +175,8 @@ class ConfigManager:
         window = WindowSettings(800, 600, 100, "Dark", "Live")
         output = OutputSettings("../", "Measurement_", "csv", ",")
         sensors = [Sensor("Distance Sensor 1", "DistanceSensor_GP2Y0A710K0F", [GPIO(1, "IN")], None, 1, 0, True, ["#FF0000"], ["cm"], 0.5),
-                   Sensor("Distance Sensor 2", "DistanceSensor_GP2Y0A21YK0F", [GPIO(2, "IN")], None, 1, 0, False, ["#00FF00"], ["cm"], 0.5),
-                   Sensor("Weather Sensor", "WeatherSensor_BMP280", None, I2CDevice(1), 3, 0, False, ["#FF0000", "#00FF00", "#0000FF"],
+                   Sensor("Distance Sensor 2", "DistanceSensor_GP2Y0A21YK0F", [GPIO(2, "IN")], None, 1, 0, True, ["#00FF00"], ["cm"], 0.5),
+                   Sensor("Weather Sensor", "WeatherSensor_BMP280", None, I2CDevice(1), 3, 0, True, ["#FF0000", "#00FF00", "#0000FF"],
                           ["C", "hPa", "m"], 0.5)]
         new_config = ConfigData(sensors, window, output)
 

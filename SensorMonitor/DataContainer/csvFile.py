@@ -23,22 +23,25 @@ class CSVFile:
         self.path = path
         self.file = open(self.path, "w", newline='')
         self.writer = writer(self.file, delimiter=separator)
+        self.columns = value_columns
 
         # Write headline
         columns = []
-        for column in range(value_columns):
+        for column in range(self.columns):
             columns.append("Value " + str(column + 1))
 
         columns.append("Time")
         self.writer.writerow(columns)
 
-    def write(self, value: ValueTimestampTuple):
+    def write_to_csv_file(self, value: ValueTimestampTuple):
         """Writes a new value-timestamp tuple to the file.
 
         :param value: ValueTimestampTuple = the tuple to write.
         """
-
-        row_content = value.value
+        row_content = []
+        for col in range(self.columns):
+            row_content.append(value.value[0][col])
+        
         row_content.append(value.timestamp)
         self.writer.writerow(row_content)
 

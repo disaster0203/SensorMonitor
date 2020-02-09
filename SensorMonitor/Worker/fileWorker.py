@@ -5,6 +5,7 @@ from queue import Queue
 from typing import Dict
 from SensorMonitor.DataContainer.csvFile import CSVFile
 from SensorMonitor.DataContainer.valueTimestampTuple import ValueTimestampTuple
+from SensorMonitor.Manager.configManager import ConfigManager
 
 
 class FileWorker:
@@ -20,7 +21,8 @@ class FileWorker:
                                 'csv' is supported.
         :param separator: str = the column separator of the csv files.
         """
-
+        
+        self.configMng = ConfigManager()
         self.output_path = path
         self._queues = queues
         self._files = {}
@@ -48,9 +50,10 @@ class FileWorker:
         if "csv" not in self._extensions and "xlsx" not in self._extensions:
             return  # Abort starting thread if no known file extension is used
         for name in self._queues:
+            current_sensor = self.configMng.get_sensor_by_name(name)
             if "csv" in self._extensions:
                 self._files[name] = {"csv": CSVFile(self.output_path + name + "__" + datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + ".csv",
-                                                    self.separator)}
+                                                    self.separator, current_sensor.value_count)}
             # elif "xlsx" in self._extensions:
             #    self._files[name] = {"xlsx": open(self.output_path + datetime.datetime.now().strftime("%d-%m-%Y_%H:%M:%S"), "w+")}
 
@@ -84,6 +87,7 @@ class FileWorker:
                         if "csv" in self._extensions:
                             self._write_csv(n, value)
             time.sleep(0.075)  # wait for 75 ms for better performance
+            value = None
 
         # After measuring stopped write remaining values into the files
         for n, q in self._queues.items():
@@ -91,6 +95,7 @@ class FileWorker:
                 value = q.get()
                 q.task_done()
                 self._write_csv(n, value)
+                value = None
 
         for file in self._files:
             self._files[file]["csv"].finish()
@@ -102,6 +107,6 @@ class FileWorker:
         :param value_to_write: ValueTimestampTuple = the new value timestamp tuple to write to file.
         """
 
-        self._files[sensor_name]["csv"].write(value_to_write)
+        self._files[sensor_name]["csv"].write_to_csv_file(value_to_write)
 
     # def _write_xlsx(self, sensor_name, value_to_write):
