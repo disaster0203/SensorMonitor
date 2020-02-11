@@ -141,7 +141,7 @@ class ConfigManager:
         """
 
         if self.config_data is not None:
-            self.config_data.output_settings.defaultPath = path
+            self.config_data.output_settings.default_path = path
             self.write_config_data()
             return True
         else:
